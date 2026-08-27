@@ -1,51 +1,69 @@
 # Deployment Model
 
-## Current target
+## Active homelab deployment
 
-The production-oriented deployment is a lightweight Linux container in the homelab. It will read from a synchronized replica of the private Obsidian vault rather than from the workstation directly.
+The RAG backend now runs in a dedicated Debian 13 Linux container on the homelab virtualization platform.
 
-Suggested starting allocation:
+Current allocation:
 
 - 2 vCPU
 - 2 GB RAM
-- 24 to 32 GB root disk
-- No GPU requirement
+- 512 MB swap
+- 32 GB root disk
+- No GPU
 
-## Service responsibilities
+The container currently hosts:
 
-The container is expected to host:
+- PostgreSQL 17
+- pgvector 0.8.0
+- The `knowledge_rag` application database and restricted application role
+- The future Python ingestion service
+- The future FastAPI retrieval service
 
-- PostgreSQL with pgvector
-- Python ingestion code
-- FastAPI retrieval service
-- Scheduled or event-driven re-indexing
+Embedding and language-model inference remain external services during the initial implementation.
 
-The LLM and embedding model remain external services during the initial implementation.
+## Development workstation
 
-## Data mounts
+The public repository is cloned to the development workstation. A Python virtual environment is used locally for tests and application development.
 
-The vault replica should be mounted read-only into the RAG service whenever practical. The application should never need write access to the canonical vault to answer questions.
+Authenticated PostgreSQL connectivity from the workstation to the homelab database has been validated over the private LAN.
 
-Example conceptual layout:
+The local `.env` contains the private database connection string and is excluded from Git. Credentials and private network addressing must never be committed.
+
+## Vault data path
+
+The canonical Obsidian vault remains on the workstation. Syncthing replicates it to ZFS-backed homelab storage with staggered file versioning.
+
+The real vault is intentionally not indexed yet. Until persistence and privacy controls are validated, development uses only:
 
 ```text
-/mnt/knowledge-vault      # private synchronized Markdown replica
-/opt/knowledge-vault-rag # application code
-/var/lib/postgresql       # derived database state
+examples/sample-vault/
 ```
 
-Actual hostnames, private addresses, Syncthing device IDs, and private paths should remain in local deployment documentation rather than this public repository.
+The future production ingestion service should consume the homelab replica and should use read-only access wherever practical.
 
-## Development
+## Database networking
 
-For public development, use `examples/sample-vault/` as `VAULT_PATH` and run PostgreSQL through Docker Compose.
+PostgreSQL is configured to listen on its private LAN interface in addition to localhost. Authentication is controlled through `pg_hba.conf` with SCRAM authentication.
 
-```bash
-cp .env.example .env
-docker compose up -d
-python -m pip install -e ".[dev]"
-python scripts/inspect_vault.py
-uvicorn knowledge_rag.api.main:app --reload
-```
+Deployment-specific addresses and credentials are intentionally omitted from this public repository.
 
-The `/health` endpoint can then be used to confirm the API process is running.
+For tighter access control, production rules should prefer specific trusted clients rather than broad network ranges.
+
+## Portable development option
+
+`docker-compose.yml` remains in the repository as a portable option for contributors or future isolated development environments. It is not required by the active homelab deployment.
+
+## Operational follow-up
+
+Before production vault indexing, complete these infrastructure tasks:
+
+1. Configure scheduled backup protection for the RAG container and database state.
+2. Perform and document a restore validation.
+3. Add the RAG container to Checkmk.
+4. Discover and monitor host resources, PostgreSQL health, and the future API service.
+5. Validate alerting behavior.
+
+## Next software milestone
+
+Persist parsed documents and chunks from the synthetic sample vault into PostgreSQL while preserving stable document identity, metadata, content hashes, and vault-relative source paths.
