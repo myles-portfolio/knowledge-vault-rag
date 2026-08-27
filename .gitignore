@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local runtime data
+*.log
+.coverage
+htmlcov/
+
+# Never commit a real private vault
+vault/
+private-vault/
+knowledge-vault/
+
+# Syncthing state
+.stfolder
+.stversions/
+
+# Obsidian transient state in any sanitized test vault
+**/.obsidian/workspace.json
+**/.obsidian/workspace-mobile.json
+**/.trash/
