@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS documents (
     document_id BIGSERIAL PRIMARY KEY,
+    document_uuid UUID NOT NULL UNIQUE,
     source_path TEXT NOT NULL UNIQUE,
     title TEXT NOT NULL,
     note_type TEXT,
@@ -21,5 +22,8 @@ CREATE TABLE IF NOT EXISTS document_chunks (
     UNIQUE (document_id, chunk_index)
 );
 
-CREATE INDEX IF NOT EXISTS idx_documents_type ON documents(note_type);
-CREATE INDEX IF NOT EXISTS idx_documents_metadata ON documents USING GIN(metadata);
+CREATE INDEX IF NOT EXISTS idx_documents_type
+ON documents(note_type);
+
+CREATE INDEX IF NOT EXISTS idx_documents_metadata
+ON documents USING GIN(metadata);
