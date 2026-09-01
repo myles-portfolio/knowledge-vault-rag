@@ -2,6 +2,7 @@ from knowledge_rag.config import settings
 from knowledge_rag.db import get_connection
 from knowledge_rag.ingest.markdown import discover_markdown_files
 from knowledge_rag.ingest.persistence import persist_note
+from knowledge_rag.logging_utils import safe_note_reference
 
 
 def main() -> None:
@@ -9,12 +10,10 @@ def main() -> None:
 
     with get_connection() as conn:
         for note_path in discover_markdown_files(vault_path):
-            changed = persist_note(conn, vault_path, note_path)
+            result = persist_note(conn, vault_path, note_path)
+            reference = safe_note_reference(vault_path, note_path)
 
-            status = "indexed" if changed else "unchanged"
-            relative_path = note_path.relative_to(vault_path)
-
-            print(f"{status}: {relative_path}")
+            print(f"{result.value}: {reference}")
 
 
 if __name__ == "__main__":

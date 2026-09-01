@@ -10,9 +10,14 @@ class Settings(BaseSettings):
 
     vault_path: Path = Path("examples/sample-vault")
     database_url: str = "postgresql://knowledge_rag:change-me@localhost:5432/knowledge_rag"
+
+    excluded_paths: tuple[str, ...] = ()
+    excluded_note_types: tuple[str, ...] = ()
+
     openai_api_key: str | None = None
     embedding_model: str = "text-embedding-3-small"
     llm_model: str | None = None
+
 
 
 settings = Settings()
