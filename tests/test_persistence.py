@@ -6,6 +6,8 @@ import psycopg
 
 from knowledge_rag.config import settings
 from knowledge_rag.ingest.persistence import PersistResult, persist_note
+from knowledge_rag.embeddings import DeterministicEmbeddingProvider
+from knowledge_rag.embedding_store import embed_missing_chunks
 
 
 def create_test_tables(conn: psycopg.Connection) -> None:
@@ -28,17 +30,19 @@ def create_test_tables(conn: psycopg.Connection) -> None:
     )
 
     conn.execute(
-        """
-        CREATE TEMP TABLE document_chunks (
-            chunk_id BIGSERIAL PRIMARY KEY,
-            document_id BIGINT NOT NULL,
-            chunk_index INTEGER NOT NULL,
-            heading_path TEXT,
-            content TEXT NOT NULL,
-            UNIQUE (document_id, chunk_index)
-        );
-        """
-    )
+    """
+    CREATE TEMP TABLE document_chunks (
+        chunk_id BIGSERIAL PRIMARY KEY,
+        document_id BIGINT NOT NULL,
+        chunk_index INTEGER NOT NULL,
+        heading_path TEXT,
+        content TEXT NOT NULL,
+        token_estimate INTEGER,
+        embedding VECTOR(1536),
+        UNIQUE (document_id, chunk_index)
+    );
+    """
+)
 
 
 def test_persist_note_inserts_skips_and_updates() -> None:
@@ -319,3 +323,98 @@ This note may be used with external model providers.
     assert result is PersistResult.INDEXED
     assert row is not None
     assert row[0] == "allowed"
+
+def test_changed_document_chunks_are_reembedded(tmp_path: Path) -> None:
+    vault_path = tmp_path / "vault"
+    vault_path.mkdir()
+
+    note_path = vault_path / "Allowed.md"
+    note_path.write_text(
+        """---
+type: reference
+ai_access: allowed
+---
+
+# Allowed
+
+Initial content.
+""",
+        encoding="utf-8",
+    )
+
+    provider = DeterministicEmbeddingProvider(dimensions=1536)
+
+    with psycopg.connect(settings.database_url) as conn:
+        create_test_tables(conn)
+
+        first_result = persist_note(
+            conn,
+            vault_path,
+            note_path,
+        )
+
+        first_embedded_count = embed_missing_chunks(
+            conn,
+            provider,
+        )
+
+        first_row = conn.execute(
+            """
+            SELECT chunk_id, embedding IS NOT NULL
+            FROM document_chunks;
+            """
+        ).fetchone()
+
+        assert first_result is PersistResult.INDEXED
+        assert first_embedded_count > 0
+        assert first_row is not None
+        assert first_row[1] is True
+
+        original_chunk_id = first_row[0]
+
+        note_path.write_text(
+            """---
+type: reference
+ai_access: allowed
+---
+
+# Allowed
+
+Changed content that requires a new embedding.
+""",
+            encoding="utf-8",
+        )
+
+        second_result = persist_note(
+            conn,
+            vault_path,
+            note_path,
+        )
+
+        changed_row = conn.execute(
+            """
+            SELECT chunk_id, embedding IS NULL
+            FROM document_chunks;
+            """
+        ).fetchone()
+
+        assert second_result is PersistResult.INDEXED
+        assert changed_row is not None
+        assert changed_row[0] != original_chunk_id
+        assert changed_row[1] is True
+
+        second_embedded_count = embed_missing_chunks(
+            conn,
+            provider,
+        )
+
+        final_row = conn.execute(
+            """
+            SELECT embedding IS NOT NULL
+            FROM document_chunks;
+            """
+        ).fetchone()
+
+        assert second_embedded_count > 0
+        assert final_row is not None
+        assert final_row[0] is True

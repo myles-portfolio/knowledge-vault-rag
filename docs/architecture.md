@@ -58,7 +58,7 @@ This repository contains only code, sanitized configuration examples, synthetic 
 
 ### External model boundary
 
-Only the minimum retrieved context required for a query should be sent to external embedding or generation APIs. Later phases should add configurable exclusion rules for sensitive note types and paths.
+Only the minimum retrieved context required for a query should be sent to external embedding or generation APIs. Privacy controls are enforced before indexing and again before externally permitted model use. Notes may be excluded by path, note type, or `ai_access` policy, and `local-only` content must remain inside the local environment.
 
 ## Initial deployment model
 
