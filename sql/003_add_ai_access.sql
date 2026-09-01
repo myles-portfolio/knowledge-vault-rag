@@ -1,0 +1,2 @@
+ALTER TABLE documents
+ADD COLUMN IF NOT EXISTS ai_access TEXT NOT NULL DEFAULT 'local-only';

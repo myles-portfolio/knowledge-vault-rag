@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS documents (
     note_type TEXT,
     created_date DATE,
     status TEXT,
+    ai_access TEXT NOT NULL DEFAULT 'local-only',
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     content_hash TEXT NOT NULL,
     indexed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
