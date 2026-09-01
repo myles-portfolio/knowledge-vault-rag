@@ -54,19 +54,19 @@ Workstation
 
 ## Current stack
 
-| Layer | Technology | Status |
-| --- | --- | --- |
-| Knowledge authoring | Obsidian and Markdown | Operational |
-| Vault version history | Private Git repository | Operational |
-| Vault synchronization | Syncthing | Operational |
-| Homelab vault storage | ZFS-backed storage | Operational |
-| Application | Python | Scaffolded |
-| API | FastAPI | Health endpoint scaffolded |
-| Database | PostgreSQL 17 | Operational in homelab |
-| Vector search | pgvector 0.8.0 | Enabled |
-| Embeddings | External API | Planned |
-| Generation | External LLM API | Planned |
-| Production runtime | Dedicated Debian 13 LXC | Operational |
+| Layer                 | Technology                                                                         | Status                     |
+| --------------------- | ---------------------------------------------------------------------------------- | -------------------------- |
+| Knowledge authoring   | Obsidian and Markdown                                                              | Operational                |
+| Vault version history | Private Git repository                                                             | Operational                |
+| Vault synchronization | Syncthing                                                                          | Operational                |
+| Homelab vault storage | ZFS-backed storage                                                                 | Operational                |
+| Application           | Python                                                                             | Scaffolded                 |
+| API                   | FastAPI                                                                            | Health endpoint scaffolded |
+| Database              | PostgreSQL 17                                                                      | Operational in homelab     |
+| Vector search         | pgvector 0.8.0                                                                     | Enabled                    |
+| Embeddings            | Provider abstraction with deterministic local provider and optional OpenAI adapter | Implemented                |
+| Generation            | External LLM API                                                                   | Planned                    |
+| Production runtime    | Dedicated Debian 13 LXC                                                            | Operational                |
 
 ## Development model
 
@@ -107,9 +107,9 @@ Docker Compose remains available as a portable development option, but the activ
 - [x] Phase 3: Markdown loading, frontmatter parsing, and heading-aware chunking scaffold
 - [x] Phase 4: Dedicated Debian RAG container deployed
 - [x] Phase 5: PostgreSQL 17 and pgvector 0.8.0 installed and connectivity validated
-- [ ] Phase 6: Persist parsed sample documents and chunks in PostgreSQL
-- [ ] Phase 7: Privacy-aware indexing and retrieval policies
-- [ ] Phase 8: Embedding pipeline and semantic retrieval
+- [x] Phase 6: Persist parsed sample documents and chunks in PostgreSQL
+- [x] Phase 7: Privacy-aware indexing and retrieval policies
+- [x] Phase 8: Embedding pipeline and semantic retrieval
 - [ ] Phase 9: FastAPI query service
 - [ ] Phase 10: Grounded answer generation with citations
 - [ ] Phase 11: Hybrid lexical and vector search
@@ -134,6 +134,10 @@ The production system is expected to add explicit policy controls so notes can b
 
 ## Status
 
-The infrastructure foundation is now operational. A private Obsidian vault is synchronized to protected homelab storage, the dedicated Debian RAG container is running, PostgreSQL 17 and pgvector 0.8.0 are available, and authenticated database connectivity from the development workstation has been validated.
+The infrastructure foundation and core retrieval pipeline are operational.
 
-The next software milestone is database persistence for parsed documents and chunks using only the synthetic sample vault.
+The system can parse synthetic Markdown notes, enforce privacy-aware indexing rules, persist documents and chunks in PostgreSQL, generate deterministic development embeddings, store vectors in pgvector, and perform top-k semantic retrieval with metadata filtering.
+
+An OpenAI embedding adapter is implemented but has not been live-validated because external API usage is optional and separately billed. Development and automated tests remain fully functional without external API credentials.
+
+The next software milestone is the FastAPI query service.
